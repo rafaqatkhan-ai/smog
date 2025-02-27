@@ -1,4 +1,6 @@
 streamlit
+openpyxl
+
 scikit-learn
 catboost
 pandas
