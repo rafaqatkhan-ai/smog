@@ -1,3 +1,4 @@
+sklearn
 streamlit
 tensorflow
 opencv-python-headless
