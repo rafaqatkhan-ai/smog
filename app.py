@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
+import os
 
 # Streamlit UI
 st.title("PM10 & PM2.5 Smog Level Prediction and Model Training")
@@ -34,6 +35,10 @@ if uploaded_file:
     X_test_scaled = scaler.transform(X_test)
     joblib.dump(scaler, "scaler.pkl")
     
+    # Reshape for CNN and LSTM
+    X_train_scaled = X_train_scaled.reshape(X_train_scaled.shape[0], X_train_scaled.shape[1], 1)
+    X_test_scaled = X_test_scaled.reshape(X_test_scaled.shape[0], X_test_scaled.shape[1], 1)
+    
     # Model definitions
     def build_cnn(input_shape, num_classes):
         model = tf.keras.Sequential([
@@ -47,75 +52,41 @@ if uploaded_file:
         model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         return model
     
-    def build_dnn(input_shape, num_classes):
-        model = tf.keras.Sequential([
-            tf.keras.layers.Dense(128, activation='relu', input_shape=(input_shape,)),
-            tf.keras.layers.Dropout(0.5),
-            tf.keras.layers.Dense(num_classes, activation='softmax')
-        ])
-        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        return model
-    
-    def build_lstm(input_shape, num_classes):
-        model = tf.keras.Sequential([
-            tf.keras.layers.LSTM(64, return_sequences=True, input_shape=input_shape),
-            tf.keras.layers.LSTM(64),
-            tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dropout(0.5),
-            tf.keras.layers.Dense(num_classes, activation='softmax')
-        ])
-        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        return model
-    
-    # Train models
+    # Train CNN Model
     num_classes = len(np.unique(Y))
     input_shape = (X_train_scaled.shape[1], 1)
     
     cnn_model = build_cnn(input_shape, num_classes)
-    cnn_model.fit(X_train_scaled[..., np.newaxis], Y_train, epochs=10, batch_size=32, verbose=1)
+    cnn_model.fit(X_train_scaled, Y_train, epochs=10, batch_size=32, verbose=1)
     cnn_model.save("cnn_model.h5")
     
-    dnn_model = build_dnn(X_train_scaled.shape[1], num_classes)
-    dnn_model.fit(X_train_scaled, Y_train, epochs=10, batch_size=32, verbose=1)
-    dnn_model.save("dnn_model.h5")
+    st.success("Model trained and saved successfully!")
     
-    lstm_model = build_lstm(input_shape, num_classes)
-    lstm_model.fit(X_train_scaled[..., np.newaxis], Y_train, epochs=10, batch_size=32, verbose=1)
-    lstm_model.save("lstm_model.h5")
+    # Reload model for prediction
+    if os.path.exists("cnn_model.h5"):
+        cnn_model = tf.keras.models.load_model("cnn_model.h5")
+        scaler = joblib.load("scaler.pkl")
     
-    st.success("Models trained and saved successfully!")
-    
-    # Reload models for prediction
-    cnn_model = tf.keras.models.load_model("cnn_model.h5")
-    dnn_model = tf.keras.models.load_model("dnn_model.h5")
-    lstm_model = tf.keras.models.load_model("lstm_model.h5")
-    scaler = joblib.load("scaler.pkl")
-    
-    # Prediction UI
-    smog_levels = {2: "Moderate", 3: "Unhealthy Sensitive", 4: "Unhealthy", 5: "Very Unhealthy", 6: "Hazardous"}
-    scaled_aqi = st.number_input("Scaled AQI (1-5)", min_value=1.0, max_value=5.0, step=0.1)
-    co = st.number_input("CO (µg/m³)")
-    no = st.number_input("NO (µg/m³)")
-    no2 = st.number_input("NO2 (µg/m³)")
-    o3 = st.number_input("O3 (µg/m³)")
-    so2 = st.number_input("SO2 (µg/m³)")
-    pm25 = st.number_input("PM2.5 (µg/m³)")
-    pm10 = st.number_input("PM10 (µg/m³)")
-    nh3 = st.number_input("NH3 (µg/m³)")
-    
-    if st.button("Predict Smog Level"):
-        input_features = np.array([[scaled_aqi, co, no, no2, o3, so2, pm25, pm10, nh3]])
-        input_scaled = scaler.transform(input_features)
-        input_cnn = input_scaled[..., np.newaxis]
-        input_lstm = input_scaled[..., np.newaxis]
+        # Prediction UI
+        smog_levels = {2: "Moderate", 3: "Unhealthy Sensitive", 4: "Unhealthy", 5: "Very Unhealthy", 6: "Hazardous"}
+        scaled_aqi = st.number_input("Scaled AQI (1-5)", min_value=1.0, max_value=5.0, step=0.1)
+        co = st.number_input("CO (µg/m³)")
+        no = st.number_input("NO (µg/m³)")
+        no2 = st.number_input("NO2 (µg/m³)")
+        o3 = st.number_input("O3 (µg/m³)")
+        so2 = st.number_input("SO2 (µg/m³)")
+        pm25 = st.number_input("PM2.5 (µg/m³)")
+        pm10 = st.number_input("PM10 (µg/m³)")
+        nh3 = st.number_input("NH3 (µg/m³)")
         
-        cnn_pred = np.argmax(cnn_model.predict(input_cnn), axis=1)[0] + 2
-        dnn_pred = np.argmax(dnn_model.predict(input_scaled), axis=1)[0] + 2
-        lstm_pred = np.argmax(lstm_model.predict(input_lstm), axis=1)[0] + 2
-        
-        st.subheader("Predicted Smog Levels:")
-        st.write(f"**CNN Model:** {smog_levels[cnn_pred]}")
-        st.write(f"**DNN Model:** {smog_levels[dnn_pred]}")
-        st.write(f"**LSTM Model:** {smog_levels[lstm_pred]}")
+        if st.button("Predict Smog Level"):
+            input_features = np.array([[scaled_aqi, co, no, no2, o3, so2, pm25, pm10, nh3]])
+            input_scaled = scaler.transform(input_features)
+            input_cnn = input_scaled[..., np.newaxis]
+            
+            cnn_pred = np.argmax(cnn_model.predict(input_cnn), axis=1)[0] + 2
+            
+            st.subheader("Predicted Smog Level:")
+            st.write(f"**CNN Model:** {smog_levels[cnn_pred]}")
     
-st.write("This app trains models and predicts PM10 & PM2.5 smog levels using air quality data.")
+st.write("This app trains a CNN model and predicts PM10 & PM2.5 smog levels using air quality data.")
