@@ -6,19 +6,38 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
 import os
+import requests
+from io import BytesIO
 
 # Streamlit UI
 st.title("PM10 & PM2.5 Smog Level Prediction and Model Training")
 
-uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
+# Option to upload a local file or provide a GitHub URL
+upload_option = st.radio("Choose how to upload your dataset:", ("Upload a local file", "Provide a GitHub URL"))
 
-if uploaded_file:
-    # Load dataset
-    if uploaded_file.name.endswith(".csv"):
-        data = pd.read_csv(uploaded_file)
-    else:
-        data = pd.read_excel(uploaded_file)
-    
+data = None
+
+if upload_option == "Upload a local file":
+    uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
+    if uploaded_file:
+        if uploaded_file.name.endswith(".csv"):
+            data = pd.read_csv(uploaded_file)
+        else:
+            data = pd.read_excel(uploaded_file)
+else:
+    github_url = st.text_input("Enter the GitHub URL of the .xlsx file:")
+    if github_url:
+        try:
+            # Fetch the file from GitHub
+            response = requests.get(github_url)
+            response.raise_for_status()  # Raise an error for bad status codes
+            # Load the file into a pandas DataFrame
+            data = pd.read_excel(BytesIO(response.content))
+            st.success("File successfully loaded from GitHub!")
+        except Exception as e:
+            st.error(f"Error loading file from GitHub: {e}")
+
+if data is not None:
     st.write("### Dataset Preview:")
     st.write(data.head())
     
