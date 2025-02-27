@@ -12,30 +12,52 @@ from io import BytesIO
 # Streamlit UI
 st.title("PM10 & PM2.5 Smog Level Prediction and Model Training")
 
-# Option to upload a local file or provide a GitHub URL
-upload_option = st.radio("Choose how to upload your dataset:", ("Upload a local file", "Provide a GitHub URL"))
+# GitHub repository details
+GITHUB_REPO = "https://api.github.com/repos/rafaqatkhan-ai/smog/contents/"
 
-data = None
+def list_files_in_repo(repo_url):
+    """Fetch the list of files in the GitHub repository."""
+    try:
+        response = requests.get(repo_url)
+        response.raise_for_status()
+        files = [file['name'] for file in response.json() if file['type'] == 'file']
+        return files
+    except Exception as e:
+        st.error(f"Error fetching files from GitHub: {e}")
+        return []
 
-if upload_option == "Upload a local file":
-    uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
-    if uploaded_file:
-        if uploaded_file.name.endswith(".csv"):
-            data = pd.read_csv(uploaded_file)
-        else:
-            data = pd.read_excel(uploaded_file)
-else:
-    github_url = st.text_input("Enter the GitHub URL of the .xlsx file:")
-    if github_url:
-        try:
-            # Fetch the file from GitHub
-            response = requests.get(github_url)
-            response.raise_for_status()  # Raise an error for bad status codes
+def fetch_file_from_github(repo_url, filename):
+    """Fetch the selected file from the GitHub repository."""
+    try:
+        raw_url = f"https://raw.githubusercontent.com/rafaqatkhan-ai/smog/main/{filename}"
+        response = requests.get(raw_url)
+        response.raise_for_status()
+        return BytesIO(response.content)
+    except Exception as e:
+        st.error(f"Error fetching file from GitHub: {e}")
+        return None
+
+# Fetch the list of files in the repository
+files = list_files_in_repo(GITHUB_REPO)
+
+if files:
+    # Create a dropdown to select a file
+    selected_file = st.selectbox("Select a file from the GitHub repository:", files)
+    
+    if selected_file:
+        # Fetch the selected file
+        file_content = fetch_file_from_github(GITHUB_REPO, selected_file)
+        if file_content:
             # Load the file into a pandas DataFrame
-            data = pd.read_excel(BytesIO(response.content))
-            st.success("File successfully loaded from GitHub!")
-        except Exception as e:
-            st.error(f"Error loading file from GitHub: {e}")
+            if selected_file.endswith(".csv"):
+                data = pd.read_csv(file_content)
+            elif selected_file.endswith(".xlsx"):
+                data = pd.read_excel(file_content)
+            else:
+                st.error("Unsupported file format. Please upload a CSV or Excel file.")
+                data = None
+else:
+    st.error("No files found in the GitHub repository.")
 
 if data is not None:
     st.write("### Dataset Preview:")
