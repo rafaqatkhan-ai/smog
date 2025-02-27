@@ -52,13 +52,21 @@ if uploaded_file:
         model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         return model
     
-    # Train CNN Model
-    num_classes = len(np.unique(Y))
-    input_shape = (X_train_scaled.shape[1], 1)
-    
-    cnn_model = build_cnn(input_shape, num_classes)
-    cnn_model.fit(X_train_scaled, Y_train, epochs=10, batch_size=32, verbose=1)
-    cnn_model.save("cnn_model.h5")
+   # Train CNN Model
+num_classes = len(np.unique(Y))
+input_shape = (X_train_scaled.shape[1], 1)
+
+# Adjust labels if needed
+Y_train = Y_train - min(Y_train)  # Ensures labels start from 0
+
+cnn_model = build_cnn(input_shape, num_classes)
+
+# Ensure correct shape
+X_train_scaled = np.expand_dims(X_train_scaled, axis=-1)  # (samples, features, 1)
+
+cnn_model.fit(X_train_scaled, Y_train, epochs=10, batch_size=32, verbose=1)
+cnn_model.save("cnn_model.h5")
+
     
     st.success("Model trained and saved successfully!")
     
