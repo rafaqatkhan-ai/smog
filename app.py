@@ -13,7 +13,10 @@ st.title("PM10 & PM2.5 Smog Level Prediction and Model Training")
 
 # GitHub repository dataset URL
 github_repo_url = "https://raw.githubusercontent.com/rafaqatkhan-ai/smog/main/"
-file_name = "smog_data.csv"  # Adjust this based on actual filename in repo
+dataset_files = ["smog_data.csv", "smog_data.xlsx"]  # List of available datasets
+
+# Dropdown to select dataset from GitHub
+selected_file = st.selectbox("Select a dataset from GitHub:", dataset_files)
 
 def load_data_from_github(file_name):
     url = github_repo_url + file_name
@@ -31,10 +34,8 @@ if uploaded_file:
         data = pd.read_csv(uploaded_file)
     else:
         data = pd.read_excel(uploaded_file)
-elif os.path.exists(file_name):
-    data = load_data_from_github(file_name)
 else:
-    data = None
+    data = load_data_from_github(selected_file)
 
 if data is not None:
     st.write("### Dataset Preview:")
