@@ -17,14 +17,24 @@ file_name = "smog_data.csv"  # Adjust this based on actual filename in repo
 
 def load_data_from_github(file_name):
     url = github_repo_url + file_name
-    response = requests.get(url)
-    if response.status_code == 200:
+    try:
         return pd.read_csv(url) if file_name.endswith(".csv") else pd.read_excel(url)
-    else:
-        st.error("Failed to load dataset from GitHub repository.")
+    except Exception as e:
+        st.error(f"Failed to load dataset from GitHub repository. Error: {e}")
         return None
 
-data = load_data_from_github(file_name)
+# File uploader
+uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
+
+if uploaded_file:
+    if uploaded_file.name.endswith(".csv"):
+        data = pd.read_csv(uploaded_file)
+    else:
+        data = pd.read_excel(uploaded_file)
+elif os.path.exists(file_name):
+    data = load_data_from_github(file_name)
+else:
+    data = None
 
 if data is not None:
     st.write("### Dataset Preview:")
