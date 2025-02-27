@@ -26,6 +26,9 @@ if uploaded_file:
     X = data.iloc[:, :-1].values  # Features
     Y = data.iloc[:, -1].values.astype(int)  # Labels
     
+    # Shift labels to start from 0
+    Y = Y - 2
+    
     # Train-test split
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
     
@@ -35,13 +38,14 @@ if uploaded_file:
     X_test_scaled = scaler.transform(X_test)
     joblib.dump(scaler, "scaler.pkl")
     
-    # Reshape for CNN and LSTM
+    # Reshape for CNN
     X_train_scaled = X_train_scaled.reshape(X_train_scaled.shape[0], X_train_scaled.shape[1], 1)
     X_test_scaled = X_test_scaled.reshape(X_test_scaled.shape[0], X_test_scaled.shape[1], 1)
     
     # Debugging: Print shapes
     st.write(f"X_train_scaled shape: {X_train_scaled.shape}")
     st.write(f"Y_train shape: {Y_train.shape}")
+    st.write(f"Unique labels in Y_train: {np.unique(Y_train)}")
     
     # Model definitions
     def build_cnn(input_shape, num_classes):
@@ -57,7 +61,7 @@ if uploaded_file:
         return model
     
     # Train CNN Model
-    num_classes = len(np.unique(Y))
+    num_classes = len(np.unique(Y_train))
     input_shape = (X_train_scaled.shape[1], 1)
     
     cnn_model = build_cnn(input_shape, num_classes)
@@ -72,7 +76,7 @@ if uploaded_file:
         scaler = joblib.load("scaler.pkl")
     
         # Prediction UI
-        smog_levels = {2: "Moderate", 3: "Unhealthy Sensitive", 4: "Unhealthy", 5: "Very Unhealthy", 6: "Hazardous"}
+        smog_levels = {0: "Moderate", 1: "Unhealthy Sensitive", 2: "Unhealthy", 3: "Very Unhealthy", 4: "Hazardous"}
         scaled_aqi = st.number_input("Scaled AQI (1-5)", min_value=1.0, max_value=5.0, step=0.1)
         co = st.number_input("CO (µg/m³)")
         no = st.number_input("NO (µg/m³)")
@@ -88,9 +92,10 @@ if uploaded_file:
             input_scaled = scaler.transform(input_features)
             input_cnn = input_scaled.reshape(input_scaled.shape[0], input_scaled.shape[1], 1)
             
-            cnn_pred = np.argmax(cnn_model.predict(input_cnn), axis=1)[0] + 2
+            cnn_pred = np.argmax(cnn_model.predict(input_cnn), axis=1)
+            predicted_label = cnn_pred[0] + 2  # Shift back to original label range
             
             st.subheader("Predicted Smog Level:")
-            st.write(f"**CNN Model:** {smog_levels[cnn_pred]}")
+            st.write(f"**CNN Model:** {smog_levels[cnn_pred[0]]}")
     
 st.write("This app trains a CNN model and predicts PM10 & PM2.5 smog levels using air quality data.")
