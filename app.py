@@ -67,8 +67,7 @@ X_train_scaled = np.expand_dims(X_train_scaled, axis=-1)  # (samples, features, 
 cnn_model.fit(X_train_scaled, Y_train, epochs=10, batch_size=32, verbose=1)
 cnn_model.save("cnn_model.h5")
 
-    
-    st.success("Model trained and saved successfully!")
+st.success("Model trained and saved successfully!")
     
     # Reload model for prediction
     if os.path.exists("cnn_model.h5"):
