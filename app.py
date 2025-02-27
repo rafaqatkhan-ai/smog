@@ -13,7 +13,7 @@ st.title("PM10 & PM2.5 Smog Level Prediction and Model Training")
 
 # GitHub repository dataset URL
 github_repo_url = "https://raw.githubusercontent.com/rafaqatkhan-ai/smog/main/"
-dataset_files = ["smog.csv", "smog.xlsx"]  # List of available datasets
+dataset_files = ["smog.xlsx"]  # List of available datasets
 
 # Dropdown to select dataset from GitHub
 selected_file = st.selectbox("Select a dataset from GitHub:", dataset_files)
