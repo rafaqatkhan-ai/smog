@@ -8,6 +8,20 @@ import joblib
 import os
 import requests
 
+# Custom CSS for Background Image
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: url('https://images.unsplash.com/photo-1547319823-b337ec3b9e4a');
+        background-size: cover;
+        background-repeat: no-repeat;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Streamlit UI - App Title
 st.title("Smog Level Prediction using Air Quality Data")
 st.write("This application predicts PM10 & PM2.5 smog levels using air quality indicators and a CNN model.")
