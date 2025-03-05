@@ -13,7 +13,7 @@ st.markdown(
     """
     <style>
     .stApp {
-        background: url('https://images.unsplash.com/photo-1547319823-b337ec3b9e4a');
+        background: url('https://raw.githubusercontent.com/rafaqatkhan-ai/smog/main/smogy');
         background-size: cover;
         background-repeat: no-repeat;
     }
