@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import numpy as np
 import tensorflow as tf
 import pandas as pd
@@ -8,14 +8,13 @@ import joblib
 import os
 import requests
 
-# Custom CSS for Background Image
+# Custom CSS for Background Color (White or Black)
 st.markdown(
     """
     <style>
     .stApp {
-        background: url('https://raw.githubusercontent.com/rafaqatkhan-ai/smog/main/s.png');
-        background-size: cover;
-        background-repeat: no-repeat;
+        background-color: white;  /* Change to black if desired */
+        color: black;
     }
     </style>
     """,
@@ -28,7 +27,7 @@ st.write("This application predicts PM10 & PM2.5 smog levels using air quality i
 
 # GitHub repository dataset URL
 github_repo_url = "https://raw.githubusercontent.com/rafaqatkhan-ai/smog/main/"
-dataset_files = ["smog.xlsx"]  # List of available datasets
+dataset_files = ["smog.xlsx"]
 
 # Dataset Selection
 dataset_option = st.radio("Choose a dataset source:", ["Use GitHub Dataset", "Upload My Own Dataset"])
@@ -59,13 +58,11 @@ if data is not None:
     st.write("### Dataset Preview:")
     st.write(data.head())
     
-    # Train Model Button
     if st.button("Train Model"):
         st.write("### Training Model...")
         
-        # Data Preprocessing
-        X = data.iloc[:, :-1].values  # Features
-        Y = data.iloc[:, -1].values.astype(int)  # Labels
+        X = data.iloc[:, :-1].values
+        Y = data.iloc[:, -1].values.astype(int)
         
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
         
@@ -74,11 +71,9 @@ if data is not None:
         X_test_scaled = scaler.transform(X_test)
         joblib.dump(scaler, "scaler.pkl")
         
-        # Reshape for CNN
         X_train_scaled = np.expand_dims(X_train_scaled, axis=-1)
         X_test_scaled = np.expand_dims(X_test_scaled, axis=-1)
         
-        # CNN Model Definition
         def build_cnn(input_shape, num_classes):
             model = tf.keras.Sequential([
                 tf.keras.layers.Conv1D(64, kernel_size=3, activation='relu', input_shape=input_shape),
@@ -93,7 +88,7 @@ if data is not None:
         
         num_classes = len(np.unique(Y))
         input_shape = (X_train_scaled.shape[1], 1)
-        Y_train = Y_train - min(Y_train)  # Ensure labels start from 0
+        Y_train = Y_train - min(Y_train)
         
         cnn_model = build_cnn(input_shape, num_classes)
         cnn_model.fit(X_train_scaled, Y_train, epochs=10, batch_size=32, verbose=1)
@@ -101,7 +96,7 @@ if data is not None:
         
         st.success("Model trained and saved successfully! You can now enter air quality values to predict smog levels.")
 
-# Prediction Section (Only if model exists)
+# Prediction Section
 if os.path.exists("cnn_model.h5"):
     st.write("## Predict Smog Level")
     st.write("Enter air quality values to predict the smog level using the trained CNN model.")
@@ -111,7 +106,6 @@ if os.path.exists("cnn_model.h5"):
     
     smog_levels = {2: "Moderate", 3: "Unhealthy Sensitive", 4: "Unhealthy", 5: "Very Unhealthy", 6: "Hazardous"}
     
-    # User Inputs
     scaled_aqi = st.number_input("Scaled AQI (1-5)", min_value=1.0, max_value=5.0, step=0.1)
     co = st.number_input("CO (µg/m³)")
     no = st.number_input("NO (µg/m³)")
